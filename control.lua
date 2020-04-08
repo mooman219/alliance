@@ -1,22 +1,24 @@
 require("defines")
 
+-- other : force
 local function toggle_ceasefire(player, other)
-   local status = player.force.get_cease_fire(other.force)
-   player.force.set_cease_fire(other.force, not status)
+   local status = player.force.get_cease_fire(other)
+   player.force.set_cease_fire(other, not status)
    if (status) then
-      player.print({"", "[", game.tick, "]", {"alliance_end_ceasefire"}, other.force.name})
+      player.print({"", "[", game.tick, "]", {"end_ceasefire"}, other.name})
    else
-      player.print({"", "[", game.tick, "]", {"alliance_start_ceasefire"}, other.force.name})
+      player.print({"", "[", game.tick, "]", {"start_ceasefire"}, other.name})
    end
 end
 
+-- other : force
 local function toggle_friendly(player, other)
-   local status = player.force.get_friend(other.force)
-   player.force.set_friend(other.force, not status)
+   local status = player.force.get_friend(other)
+   player.force.set_friend(other, not status)
    if (status) then
-      player.print({"", "[", game.tick, "]", {"alliance_end_friend"}, other.force.name})
+      player.print({"", "[", game.tick, "]", {"end_friend"}, other.name})
    else
-      player.print({"", "[", game.tick, "]", {"alliance_start_friend"}, other.force.name})
+      player.print({"", "[", game.tick, "]", {"start_friend"}, other.name})
    end
 end
 
@@ -43,7 +45,7 @@ local function create_panel(player)
    player.gui.left.add{
       type = "frame",
       name = ALLIANCE_PANEL,
-      caption = {ALLIANCE_PANEL .. "_caption"}
+      caption = {"panel_title"}
    }
 
    player.gui.left[ALLIANCE_PANEL].add{
@@ -55,19 +57,19 @@ local function create_panel(player)
 
    player.gui.left[ALLIANCE_PANEL].table.add{
       type = "label",
-      caption={ALLIANCE_PANEL .. "_force"}
+      caption={"panel_force"}
    }
    player.gui.left[ALLIANCE_PANEL].table.add{
       type = "label",
-      caption = {ALLIANCE_PANEL .. "_ceasefire"}
+      caption = {"panel_ceasefire"}
    }
    player.gui.left[ALLIANCE_PANEL].table.add{
       type="label",
-      caption = {ALLIANCE_PANEL .. "_friend"}
+      caption = {"panel_friend"}
    }
 
-   for _, other in pairs(game.players) do
-      if (player.force ~= other.force) then
+   for _, other in pairs(game.forces) do
+      if (player.force ~= other) then
          player.gui.left[ALLIANCE_PANEL].table.add{
             type = "label",
             caption = other.name
@@ -75,12 +77,12 @@ local function create_panel(player)
          player.gui.left[ALLIANCE_PANEL].table.add{
             type = "checkbox",
             name = ALLIANCE_CEASE_PREFIX .. other.name,
-            state = player.force.get_cease_fire(other.force)
+            state = player.force.get_cease_fire(other)
          }
          player.gui.left[ALLIANCE_PANEL].table.add{
             type = "checkbox",
             name = ALLIANCE_FRIEND_PREFIX .. other.name,
-            state = player.force.get_friend(other.force)
+            state = player.force.get_friend(other)
          }
          ALLIANCE_ON_CHECKBOX[ALLIANCE_CEASE_PREFIX .. other.name] = function(event)
             toggle_ceasefire(player, other)
@@ -117,13 +119,15 @@ local function reset_force(player)
          new_force.character_resource_reach_distance_bonus = new_force.character_resource_reach_distance_bonus + 30
          new_force.character_inventory_slots_bonus = new_force.character_inventory_slots_bonus + 30
          -- Default is friendly to the player's old force
-         new_force.set_cease_fire(player.force)
-         new_force.set_friend(player.force)
-         player.force.set_cease_fire(new_force)
-         player.force.set_friend(new_force)
+         new_force.set_cease_fire(player.force, true)
+         new_force.set_friend(player.force, true)
+         player.force.set_cease_fire(new_force, true)
+         player.force.set_friend(new_force, true)
       end
       player.force = game.forces[force_name]
-      player.print("You have been assigned to " .. force_name)
+      -- Chart the map so far
+      player.force.chart_all()
+      player.print({"", {"new_assignment"}, force_name})
    end
 end
 
