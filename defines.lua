@@ -1,0 +1,10 @@
+ALLIANCE_ON_BUTTON = {}
+ALLIANCE_ON_CHECKBOX = {}
+ALLIANCE_BUTTON_FRAME = "alliance_button_frame"
+ALLIANCE_BUTTON_FRAME_STYLE = "alliance_button_frame_style"
+ALLIANCE_BUTTON = "alliance_button"
+ALLIANCE_BUTTON_STYLE = "alliance_button_style"
+ALLIANCE_PANEL = "alliance_panel"
+ALLIANCE_PANEL_STYLE = "alliance_panel_style"
+ALLIANCE_CEASE_PREFIX = "alliance_cease-"
+ALLIANCE_FRIEND_PREFIX = "alliance_friend-"
