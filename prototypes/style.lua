@@ -11,7 +11,7 @@ default_style[ALLIANCE_BUTTON_STYLE] = {
     type = "button_style",
     parent = "button",
     maximal_width = 50,
-    maximal_height = 32,
+    maximal_height = 48,
     font = "default-small-semibold"
 }
 
