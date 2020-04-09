@@ -64,8 +64,7 @@ end
 -- @param player: LuaForce
 -- @param other: LuaForce
 local function is_blacklisted(player, other)
-   return player == other
-   -- return player == other or ALLIANCE_FORCE_BLACKLIST[other.name]
+   return player == other or ALLIANCE_FORCE_BLACKLIST[other.name]
 end
 
 -- ----------------------------------------------
