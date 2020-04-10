@@ -64,7 +64,7 @@ end
 -- @param player: LuaForce
 -- @param other: LuaForce
 local function is_blacklisted(player, other)
-   return player == other or ALLIANCE_FORCE_BLACKLIST[other.name]
+   return player == other or FORCE_BLACKLIST[other.name]
 end
 
 -- ----------------------------------------------
@@ -99,7 +99,7 @@ local function mark_solo(player)
          player.force.share_chart = true
       end
       player.force = game.forces[force_name]
-      table.insert(ALLIANCE_FORCE_CHART_ALL_PENDING, player.force)
+      table.insert(FORCE_CHART_ALL_PENDING, player.force)
       player.print({"new_assignment", force_name})
    end
 end
@@ -110,32 +110,32 @@ end
 
 -- @param player: LuaPlayer
 local function exists_top(player)
-   return player.gui.top[ALLIANCE_TOP_FLOW] ~= nil
+   return player.gui.top[TOP_FLOW] ~= nil
 end
 
 -- @param player: LuaPlayer
 local function exists_left(player)
-   return player.gui.left[ALLIANCE_LEFT_FLOW] ~= nil
+   return player.gui.left[LEFT_FLOW] ~= nil
 end
 
 -- @param player: LuaPlayer
 local function destroy_left(player)
-   player.gui.left[ALLIANCE_LEFT_FLOW].destroy()
+   player.gui.left[LEFT_FLOW].destroy()
 end
 
 -- @param player: LuaPlayer
 local function create_top(player)
    local flow = player.gui.top.add{
       type = "flow",
-      name = ALLIANCE_TOP_FLOW,
-      style = ALLIANCE_TOP_FLOW_STYLE,
+      name = TOP_FLOW,
+      style = TOP_FLOW_STYLE,
    }
 
    flow.add{
       type = "button",
       caption = "<3",
-      name = ALLIANCE_BUTTON_NAME,
-      style = ALLIANCE_BUTTON_STYLE,
+      name = BUTTON_NAME,
+      style = BUTTON_STYLE,
    }
 end
 
@@ -144,24 +144,24 @@ local function create_left(player)
    local flow = player.gui.left.add{
       type = "flow",
       direction = "vertical",
-      name = ALLIANCE_LEFT_FLOW,
-      style = ALLIANCE_LEFT_FLOW_STYLE,
+      name = LEFT_FLOW,
+      style = LEFT_FLOW_STYLE,
    }
 
    local settings_frame = flow.add{
       type = "frame",
       caption = {"settings_frame_title"},
-      name = ALLIANCE_SETTINGS_FRAME_NAME,
+      name = SETTINGS_FRAME_NAME,
    }
 
    if (not is_solo(player)) then
-      local alliance_settings_solo = ALLIANCE_SETTINGS_SOLO .. player.name
+      local alliance_settings_solo = SETTINGS_SOLO .. player.name
       settings_frame.add{
          type = "button",
          name = alliance_settings_solo,
          caption={"settings_table_solo"},
       }
-      ALLIANCE_ON_BUTTON[alliance_settings_solo] = function (event)
+      ON_BUTTON[alliance_settings_solo] = function (event)
          mark_solo(player)
          destroy_left(player)
       end
@@ -172,8 +172,8 @@ local function create_left(player)
       type = "table",
       column_count = 2,
       draw_horizontal_line_after_headers = true,
-      name = ALLIANCE_ALLY_TABLE_NAME,
-      style = ALLIANCE_ALLY_TABLE_STYLE,
+      name = ALLY_TABLE_NAME,
+      style = ALLY_TABLE_STYLE,
    }
 
    settings_table.add{
@@ -181,13 +181,13 @@ local function create_left(player)
       caption={"settings_table_broadcast"}
    }
 
-   local alliance_settings_broadcast = ALLIANCE_SETTINGS_BROADCAST .. player.name
+   local alliance_settings_broadcast = SETTINGS_BROADCAST .. player.name
    settings_table.add{
       type = "checkbox",
       name = alliance_settings_broadcast,
       state = player.force.share_chart
    }
-   ALLIANCE_ON_CHECKBOX[alliance_settings_broadcast] = function(event)
+   ON_CHECKBOX[alliance_settings_broadcast] = function(event)
       local new_state = event.element.state
       player.force.share_chart = new_state
       if (new_state) then
@@ -200,15 +200,15 @@ local function create_left(player)
    local ally_frame = flow.add{
       type = "frame",
       caption = {"ally_frame_title"},
-      name = ALLIANCE_ALLY_FRAME_NAME,
+      name = ALLY_FRAME_NAME,
    }
 
    local table = ally_frame.add{
       type = "table",
       column_count = 4,
       draw_horizontal_line_after_headers = true,
-      name = ALLIANCE_ALLY_TABLE_NAME,
-      style = ALLIANCE_ALLY_TABLE_STYLE,
+      name = ALLY_TABLE_NAME,
+      style = ALLY_TABLE_STYLE,
    }
 
    table.add{
@@ -236,9 +236,9 @@ local function create_left(player)
             type = "label",
             caption = other.name
          }
-         local alliance_ally_table_enemy = player.name .. ALLIANCE_ALLY_TABLE_ENEMY .. other.name
-         local alliance_ally_table_neutral = player.name .. ALLIANCE_ALLY_TABLE_NEUTRAL .. other.name
-         local alliance_ally_table_ally = player.name .. ALLIANCE_ALLY_TABLE_ALLY .. other.name
+         local alliance_ally_table_enemy = player.name .. ALLY_TABLE_ENEMY .. other.name
+         local alliance_ally_table_neutral = player.name .. ALLY_TABLE_NEUTRAL .. other.name
+         local alliance_ally_table_ally = player.name .. ALLY_TABLE_ALLY .. other.name
          table.add{
             type = "radiobutton",
             name = alliance_ally_table_enemy,
@@ -254,17 +254,17 @@ local function create_left(player)
             name = alliance_ally_table_ally,
             state = is_ally(player.force, other)
          }
-         ALLIANCE_ON_CHECKBOX[alliance_ally_table_enemy] = function(event)
+         ON_CHECKBOX[alliance_ally_table_enemy] = function(event)
             table[alliance_ally_table_neutral].state = false
             table[alliance_ally_table_ally].state = false
             set_enemy(player.force, other)
          end
-         ALLIANCE_ON_CHECKBOX[alliance_ally_table_neutral] = function(event)
+         ON_CHECKBOX[alliance_ally_table_neutral] = function(event)
             table[alliance_ally_table_enemy].state = false
             table[alliance_ally_table_ally].state = false
             set_neutral(player.force, other)
          end
-         ALLIANCE_ON_CHECKBOX[alliance_ally_table_ally] = function(event)
+         ON_CHECKBOX[alliance_ally_table_ally] = function(event)
             table[alliance_ally_table_enemy].state = false
             table[alliance_ally_table_neutral].state = false
             set_ally(player.force, other)
@@ -279,7 +279,7 @@ local function create_left(player)
    end
 end
 
-ALLIANCE_ON_BUTTON[ALLIANCE_BUTTON_NAME] = function(event)
+ON_BUTTON[BUTTON_NAME] = function(event)
    local player_index = event.player_index
    local player = game.players[player_index]
     if (exists_left(player)) then
@@ -309,26 +309,26 @@ end)
 
 -- Handles charting for new forces on a delay.
 script.on_nth_tick(60, function ()
-   local final = table.remove(ALLIANCE_FORCE_CHART_ALL_FINAL)
+   local final = table.remove(FORCE_CHART_ALL_FINAL)
    if (final) then
       final.chart_all()
    end
-   local pending = table.remove(ALLIANCE_FORCE_CHART_ALL_PENDING)
+   local pending = table.remove(FORCE_CHART_ALL_PENDING)
    if (pending) then
-      table.insert(ALLIANCE_FORCE_CHART_ALL_FINAL, pending)
+      table.insert(FORCE_CHART_ALL_FINAL, pending)
    end
 end)
 
 script.on_event(defines.events.on_gui_click, function(event)
    if (event.element) then
-      local action = ALLIANCE_ON_BUTTON[event.element.name]
+      local action = ON_BUTTON[event.element.name]
       if (action) then action(event) end
    end
 end)
 
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    if (event.element) then
-      local action = ALLIANCE_ON_CHECKBOX[event.element.name]
+      local action = ON_CHECKBOX[event.element.name]
       if (action) then action(event) end
    end
 end)
