@@ -297,9 +297,14 @@ end
 -- correct team.
 script.on_event(defines.events.on_player_joined_game, function(event)
    local player = game.players[event.player_index]
-   if not exists_top(player) then
-      create_top(player)
-   end
+   if not exists_top(player) then create_top(player) end
+end)
+
+-- Remove the left panel if it's visible. Iteracting with it can cause a desync if it's left on
+-- after a disconnect.
+script.on_event(defines.events.on_player_left_game, function(event)
+   local player = game.players[event.player_index]
+   if exists_left(player) then destroy_left(player) end
 end)
 
 -- Handles charting for new forces on a delay.
