@@ -68,6 +68,43 @@ local function is_blacklisted(player, other)
 end
 
 -- ----------------------------------------------
+-- Force functions
+-- ----------------------------------------------
+
+-- @param player: LuaPlayer
+local function is_solo(player)
+   local force_name = player.name
+   return player.force.name == force_name
+end
+
+-- @param player: LuaPlayer
+local function mark_solo(player)
+   local force_name = player.name
+   if (not is_solo(player)) then
+      if (game.forces[force_name] == nil) then
+         local new_force = game.create_force(force_name)
+         -- Copy over the research from the old force to the new one
+         for key, tech in pairs(player.force.technologies) do
+            new_force.technologies[key].researched = tech.researched
+         end
+         -- Solo player buff
+         new_force.character_build_distance_bonus = new_force.character_build_distance_bonus + 30
+         new_force.character_reach_distance_bonus = new_force.character_reach_distance_bonus + 30
+         new_force.character_resource_reach_distance_bonus = new_force.character_resource_reach_distance_bonus + 30
+         new_force.character_inventory_slots_bonus = new_force.character_inventory_slots_bonus + 30
+         new_force.manual_mining_speed_modifier = new_force.manual_mining_speed_modifier + 1
+         -- Default is friendly to the player's old force
+         set_mutual_ally(player.force, new_force)
+         -- Have the previous force share vision with the world
+         player.force.share_chart = true
+      end
+      player.force = game.forces[force_name]
+      table.insert(ALLIANCE_FORCE_CHART_ALL_PENDING, player.force)
+      player.print({"new_assignment", force_name})
+   end
+end
+
+-- ----------------------------------------------
 -- GUI functions
 -- ----------------------------------------------
 
@@ -116,6 +153,20 @@ local function create_left(player)
       caption = {"settings_frame_title"},
       name = ALLIANCE_SETTINGS_FRAME_NAME,
    }
+
+   if (not is_solo(player)) then
+      local alliance_settings_solo = ALLIANCE_SETTINGS_SOLO .. player.name
+      settings_frame.add{
+         type = "button",
+         name = alliance_settings_solo,
+         caption={"settings_table_solo"},
+      }
+      ALLIANCE_ON_BUTTON[alliance_settings_solo] = function (event)
+         mark_solo(player)
+         destroy_left(player)
+      end
+      return
+   end
 
    local settings_table = settings_frame.add{
       type = "table",
@@ -239,35 +290,6 @@ ALLIANCE_ON_BUTTON[ALLIANCE_BUTTON_NAME] = function(event)
 end
 
 -- ----------------------------------------------
--- Force functions
--- ----------------------------------------------
-
-local function reset_force(player)
-   local force_name = "team-" .. player.name
-   if (player.force.name ~= force_name) then
-      if (game.forces[force_name] == nil) then
-         local new_force = game.create_force(force_name)
-         -- Copy over the research from the old force to the new one
-         for key, tech in pairs(player.force.technologies) do
-            new_force.technologies[key].researched = tech.researched
-         end
-         -- Helps :3
-         new_force.character_build_distance_bonus = new_force.character_build_distance_bonus + 30
-         new_force.character_reach_distance_bonus = new_force.character_reach_distance_bonus + 30
-         new_force.character_resource_reach_distance_bonus = new_force.character_resource_reach_distance_bonus + 30
-         new_force.character_inventory_slots_bonus = new_force.character_inventory_slots_bonus + 30
-         -- Default is friendly to the player's old force
-         set_mutual_ally(player.force, new_force)
-         -- Have the previous force share vision with the world
-         player.force.share_chart = true
-      end
-      player.force = game.forces[force_name]
-      table.insert(ALLIANCE_FORCE_CHART_ALL_PENDING, player.force)
-      player.print({"new_assignment", force_name})
-   end
-end
-
--- ----------------------------------------------
 -- Event functions
 -- ----------------------------------------------
 
@@ -278,7 +300,6 @@ script.on_event(defines.events.on_player_joined_game, function(event)
    if not exists_top(player) then
       create_top(player)
    end
-   reset_force(player)
 end)
 
 -- Handles charting for new forces on a delay.
@@ -303,8 +324,6 @@ end)
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    if (event.element) then
       local action = ALLIANCE_ON_CHECKBOX[event.element.name]
-      if (action) then
-         action(event)
-      end
+      if (action) then action(event) end
    end
 end)

@@ -17,6 +17,7 @@ ALLIANCE_SETTINGS_FRAME_NAME = "alliance_settings_frame"
 ALLIANCE_SETTINGS_TABLE_NAME = "alliance_settings_table"
 ALLIANCE_SETTINGS_TABLE_STYLE = "alliance_ally_table_style"
 ALLIANCE_SETTINGS_BROADCAST = "alliance_settings_table_broadcast/"
+ALLIANCE_SETTINGS_SOLO = "alliance_settings_table_solo/"
 
 -- Alliance frame keys
 ALLIANCE_ALLY_FRAME_NAME = "alliance_ally_frame"
