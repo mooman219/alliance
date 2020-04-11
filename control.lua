@@ -5,17 +5,18 @@ require("defines")
 -- ----------------------------------------------
 
 local function initialize_global()
-   -- global.forces = {force.name : LuaForce}
+   -- global.forces = {force.name : LuaForceSpecification}
    global.forces = global.forces or {}
-
    -- global.force_name_map = {force.name : player.name}
    global.force_name_map = global.force_name_map or {}
 
    -- global.chart_all_pending = [force.name]
    global.chart_all_pending = global.forces or {}
-
    -- global.chart_all_final = [force.name]
    global.chart_all_final = global.forces or {}
+
+   -- global.button_relationship_target = {button.name : force.name}
+   global.ally_table_target = global.ally_table_target or {}
 end
 
 local function tick_force_chart()
@@ -49,6 +50,9 @@ local function create_alliance_force(player)
    local new_force = game.create_force(force_name)
    global.forces[force_name] = new_force
    global.force_name_map[force_name] = player.name
+   global.ally_table_target[ALLY_TABLE_ENEMY .. force_name] = force_name
+   global.ally_table_target[ALLY_TABLE_NEUTRAL .. force_name] = force_name
+   global.ally_table_target[ALLY_TABLE_ALLY .. force_name] = force_name
    return new_force
 end
 
@@ -88,7 +92,7 @@ end
 local function set_enemy(player, other)
    player.set_cease_fire(other, false)
    player.set_friend(other, false)
-   player.print({"set_enemy", game.tick, other.name})
+   player.print({"set_enemy", game.tick, get_alliance_force_name(other)})
 end
 
 -- @param player: LuaForce
@@ -96,7 +100,7 @@ end
 local function set_neutral(player, other)
    player.set_cease_fire(other, true)
    player.set_friend(other, false)
-   player.print({"set_neutral", game.tick, other.name})
+   player.print({"set_neutral", game.tick, get_alliance_force_name(other)})
 end
 
 -- @param player: LuaForce
@@ -104,7 +108,7 @@ end
 local function set_ally(player, other)
    player.set_cease_fire(other, true)
    player.set_friend(other, true)
-   player.print({"set_ally", game.tick, other.name})
+   player.print({"set_ally", game.tick, get_alliance_force_name(other)})
 end
 
 -- @param player: LuaForce
@@ -219,16 +223,11 @@ local function create_left(player)
 
    -- Declaring independence
    if (not is_solo(player)) then
-      local alliance_settings_solo = SETTINGS_SOLO .. player.name
       settings_frame.add{
          type = "button",
-         name = alliance_settings_solo,
+         name = SETTINGS_SOLO,
          caption={"settings_table_solo"},
       }
-      ON_BUTTON[alliance_settings_solo] = function (event)
-         mark_solo(player)
-         destroy_left(player)
-      end
       return
    end
 
@@ -244,43 +243,23 @@ local function create_left(player)
       type = "label",
       caption={"settings_table_broadcast"}
    }
-   local alliance_settings_broadcast = SETTINGS_BROADCAST .. player.name
    settings_table.add{
       type = "checkbox",
-      name = alliance_settings_broadcast,
+      name = SETTINGS_BROADCAST,
       state = player.force.share_chart
    }
-   ON_CHECKBOX[alliance_settings_broadcast] = function(event)
-      local new_state = event.element.state
-      player.force.share_chart = new_state
-      if (new_state) then
-         player.force.print({"settings_table_broadcast_on", game.tick})
-      else
-         player.force.print({"settings_table_broadcast_off", game.tick})
-      end
-   end
 
    -- Spawn setting and resetting
-   local settings_spawn_set = SETTINGS_SPAWN_SET .. player.name
-   local settings_spawn_reset = SETTINGS_SPAWN_RESET .. player.name
    settings_table.add{
       type = "button",
-      name = settings_spawn_set,
+      name = SETTINGS_SPAWN_SET,
       caption={"settings_tale_spawn_set"},
    }
    settings_table.add{
       type = "button",
-      name = settings_spawn_reset,
+      name = SETTINGS_SPAWN_RESET,
       caption={"settings_tale_spawn_reset"},
    }
-   ON_BUTTON[settings_spawn_set] = function(event)
-      player.force.set_spawn_position(player.position, player.surface)
-      player.force.print({"settings_tale_spawn_set_msg"})
-   end
-   ON_BUTTON[settings_spawn_reset] = function(event)
-      player.force.set_spawn_position({0, 0}, player.surface)
-      player.force.print({"settings_tale_spawn_reset_msg"})
-   end
 
    local ally_frame = flow.add{
       type = "frame",
@@ -296,7 +275,7 @@ local function create_left(player)
       style = ALLY_TABLE_STYLE,
    }
 
-   -- Alliances
+   -- Alliance table
    table.add{
       type = "label",
       caption={"ally_table_force"}
@@ -321,39 +300,36 @@ local function create_left(player)
             type = "label",
             caption = get_alliance_force_name(other)
          }
-         local alliance_ally_table_enemy = player.name .. ALLY_TABLE_ENEMY .. other.name
-         local alliance_ally_table_neutral = player.name .. ALLY_TABLE_NEUTRAL .. other.name
-         local alliance_ally_table_ally = player.name .. ALLY_TABLE_ALLY .. other.name
+         local alliance_ally_table_enemy = ALLY_TABLE_ENEMY .. other.name
+         local alliance_ally_table_neutral = ALLY_TABLE_NEUTRAL .. other.name
+         local alliance_ally_table_ally = ALLY_TABLE_ALLY .. other.name
          table.add{
-            type = "radiobutton",
+            type = "flow",
             name = alliance_ally_table_enemy,
+            style = CONTAINER_FLOW_STYLE,
+         }.add{
+            type = "radiobutton",
+            name = ALLY_TABLE_ENEMY,
             state = is_enemy(player.force, other)
          }
          table.add{
-            type = "radiobutton",
+            type = "flow",
             name = alliance_ally_table_neutral,
+            style = CONTAINER_FLOW_STYLE,
+         }.add{
+            type = "radiobutton",
+            name = ALLY_TABLE_NEUTRAL,
             state = is_neutral(player.force, other)
          }
          table.add{
-            type = "radiobutton",
+            type = "flow",
             name = alliance_ally_table_ally,
+            style = CONTAINER_FLOW_STYLE,
+         }.add{
+            type = "radiobutton",
+            name = ALLY_TABLE_ALLY,
             state = is_ally(player.force, other)
          }
-         ON_CHECKBOX[alliance_ally_table_enemy] = function(event)
-            table[alliance_ally_table_neutral].state = false
-            table[alliance_ally_table_ally].state = false
-            set_enemy(player.force, other)
-         end
-         ON_CHECKBOX[alliance_ally_table_neutral] = function(event)
-            table[alliance_ally_table_enemy].state = false
-            table[alliance_ally_table_ally].state = false
-            set_neutral(player.force, other)
-         end
-         ON_CHECKBOX[alliance_ally_table_ally] = function(event)
-            table[alliance_ally_table_enemy].state = false
-            table[alliance_ally_table_neutral].state = false
-            set_ally(player.force, other)
-         end
       end
    end
    if (count == 0) then
@@ -364,8 +340,16 @@ local function create_left(player)
    end
 end
 
-ON_BUTTON[BUTTON_NAME] = function(event)
-   local player = game.players[event.player_index]
+-- ----------------------------------------------
+-- Event functions
+-- ----------------------------------------------
+
+ON_BUTTON[SETTINGS_SOLO] = function (event, player)
+   mark_solo(player)
+   destroy_left(player)
+end
+
+ON_BUTTON[BUTTON_NAME] = function(event, player)
     if (exists_left(player)) then
       destroy_left(player)
     else
@@ -373,12 +357,57 @@ ON_BUTTON[BUTTON_NAME] = function(event)
     end
 end
 
--- ----------------------------------------------
--- Event functions
--- ----------------------------------------------
+ON_CHECKBOX[SETTINGS_BROADCAST] = function(event, player)
+   local new_state = event.element.state
+   player.force.share_chart = new_state
+   if (new_state) then
+      player.force.print({"settings_table_broadcast_on", game.tick})
+   else
+      player.force.print({"settings_table_broadcast_off", game.tick})
+   end
+end
 
--- Creates the top button if it's mising, and resets that player's force if they're not on the
--- correct team.
+ON_BUTTON[SETTINGS_SPAWN_SET] = function(event, player)
+   player.force.set_spawn_position(player.position, player.surface)
+   player.force.print({"settings_tale_spawn_set_msg", game.tick})
+end
+
+ON_BUTTON[SETTINGS_SPAWN_RESET] = function(event, player)
+   player.force.set_spawn_position({0, 0}, player.surface)
+   player.force.print({"settings_tale_spawn_reset_msg", game.tick})
+end
+
+ON_CHECKBOX[ALLY_TABLE_ENEMY] = function(event, player)
+   local other_force_name = global.ally_table_target[event.element.parent.name]
+   local other = game.forces[other_force_name]
+   event.element.parent.parent[ALLY_TABLE_NEUTRAL .. other.name].children[1].state = false
+   event.element.parent.parent[ALLY_TABLE_ALLY .. other.name].children[1].state = false
+   set_enemy(player.force, other)
+end
+
+ON_CHECKBOX[ALLY_TABLE_NEUTRAL] = function(event, player)
+   local other_force_name = global.ally_table_target[event.element.parent.name]
+   local other = game.forces[other_force_name]
+   event.element.parent.parent[ALLY_TABLE_ENEMY .. other.name].children[1].state = false
+   event.element.parent.parent[ALLY_TABLE_ALLY .. other.name].children[1].state = false
+   set_neutral(player.force, other)
+end
+
+ON_CHECKBOX[ALLY_TABLE_ALLY] = function(event, player)
+   local other_force_name = global.ally_table_target[event.element.parent.name]
+   local other = game.forces[other_force_name]
+   event.element.parent.parent[ALLY_TABLE_ENEMY .. other.name].children[1].state = false
+   event.element.parent.parent[ALLY_TABLE_NEUTRAL .. other.name].children[1].state = false
+   set_ally(player.force, other)
+end
+
+-- Creates the top button for new players.
+script.on_event(defines.events.on_player_created, function(event)
+   local player = game.players[event.player_index]
+   create_top(player)
+end)
+
+-- Creates the top button if it's mising.
 script.on_event(defines.events.on_player_joined_game, function(event)
    local player = game.players[event.player_index]
    if not exists_top(player) then create_top(player) end
@@ -400,14 +429,20 @@ end)
 script.on_event(defines.events.on_gui_click, function(event)
    if (event.element) then
       local action = ON_BUTTON[event.element.name]
-      if (action) then action(event) end
+      if (action) then
+         local player = game.players[event.player_index]
+         action(event, player)
+      end
    end
 end)
 
 script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    if (event.element) then
       local action = ON_CHECKBOX[event.element.name]
-      if (action) then action(event) end
+      if (action) then
+         local player = game.players[event.player_index]
+         action(event, player)
+      end
    end
 end)
 

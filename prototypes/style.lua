@@ -14,6 +14,15 @@ default_style[LEFT_FLOW_STYLE] = {
     left_padding = 13,
 }
 
+default_style[CONTAINER_FLOW_STYLE] = {
+	type = "horizontal_flow_style",
+	parent = "horizontal_flow",
+    top_padding = 0,
+    bottom_padding = 0,
+    left_padding = 0,
+    right_padding = 0,
+}
+
 default_style[BUTTON_STYLE] = {
     type = "button_style",
     parent = "button",
