@@ -132,22 +132,28 @@ local function is_solo(player)
    return is_alliance_force(player.force)
 end
 
+-- @param force: LuaForce
+local function apply_solo_bonus(force)
+   force.character_build_distance_bonus = force.character_build_distance_bonus + 30
+   force.character_reach_distance_bonus = force.character_reach_distance_bonus + 30
+   force.character_resource_reach_distance_bonus = force.character_resource_reach_distance_bonus + 30
+   force.character_inventory_slots_bonus = force.character_inventory_slots_bonus + 30
+   force.manual_mining_speed_modifier = force.manual_mining_speed_modifier + 1
+end
+
 -- @param player: LuaPlayer
+-- @return LuaForce
 local function mark_solo(player)
    if (not is_solo(player)) then
       local force_name = GLOBAL_FORCE_NAME .. player.name
       if (game.forces[force_name] == nil) then
          local new_force = create_alliance_force(player)
+         -- Give a solo bonus
+         apply_solo_bonus(new_force)
          -- Copy over the research from the old force to the new one
          for key, tech in pairs(player.force.technologies) do
             new_force.technologies[key].researched = tech.researched
          end
-         -- Solo player buff
-         new_force.character_build_distance_bonus = new_force.character_build_distance_bonus + 30
-         new_force.character_reach_distance_bonus = new_force.character_reach_distance_bonus + 30
-         new_force.character_resource_reach_distance_bonus = new_force.character_resource_reach_distance_bonus + 30
-         new_force.character_inventory_slots_bonus = new_force.character_inventory_slots_bonus + 30
-         new_force.manual_mining_speed_modifier = new_force.manual_mining_speed_modifier + 1
          -- Default is friendly to the player's old force
          set_mutual_ally(player.force, new_force)
          -- Have the previous force share vision with the world
@@ -273,7 +279,7 @@ local function create_left(player)
    end
    ON_BUTTON[settings_spawn_reset] = function(event)
       player.force.set_spawn_position({0, 0}, player.surface)
-      player.force.print({"settings_tale_spawn_reset_msg "})
+      player.force.print({"settings_tale_spawn_reset_msg"})
    end
 
    local ally_frame = flow.add{
@@ -419,8 +425,8 @@ script.on_configuration_changed(function(data)
             local player = force.players[1]
             if player and force.name == player.name then
                local old_force = player.force;
-               local new_force = create_alliance_force(player)
                mark_solo(player)
+               local new_force = player.force;
                game.merge_forces(old_force, new_force)
             end
          end
