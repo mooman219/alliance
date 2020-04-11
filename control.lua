@@ -5,37 +5,50 @@ require("defines")
 -- ----------------------------------------------
 
 local function initialize_global()
-   if global[GLOBAL_FORCES] == nil then
-      global[GLOBAL_FORCES] = {}
-   end
+   -- global.forces = {force.name : LuaForce}
+   global.forces = global.forces or {}
 
-   if global[GLOBAL_FORCE_NAME_MAP] == nil then
-      global[GLOBAL_FORCE_NAME_MAP] = {}
-   end
+   -- global.force_name_map = {force.name : player.name}
+   global.force_name_map = global.force_name_map or {}
+
+   -- global.chart_all_pending = [force.name]
+   global.chart_all_pending = global.forces or {}
+
+   -- global.chart_all_final = [force.name]
+   global.chart_all_final = global.forces or {}
+end
+
+local function tick_force_chart()
+   local final = table.remove(global.chart_all_final)
+   if (final and game.forces[final]) then game.forces[final].chart_all() end
+   local pending = table.remove(global.chart_all_pending)
+   if (pending) then table.insert(global.chart_all_final, pending) end
+end
+
+-- @param force: LuaForce
+local function force_chart(force)
+   table.insert(global.chart_all_pending, force.name)
 end
 
 -- @param force: LuaForce
 -- @return bool
 local function is_alliance_force(force)
-   initialize_global()
-   return global[GLOBAL_FORCES][force.name] ~= nil
+   return global.forces[force.name] ~= nil
 end
 
 -- @param force: LuaForce
 -- @return string
 local function get_alliance_force_name(force)
-   initialize_global()
-   return global[GLOBAL_FORCE_NAME_MAP][force.name]
+   return global.force_name_map[force.name]
 end
 
 -- @param player: LuaPlayer
 -- @return LuaForce
 local function create_alliance_force(player)
-   initialize_global()
    local force_name = GLOBAL_FORCE_NAME .. player.name
    local new_force = game.create_force(force_name)
-   global[GLOBAL_FORCES][force_name] = new_force
-   global[GLOBAL_FORCE_NAME_MAP][force_name] = player.name
+   global.forces[force_name] = new_force
+   global.force_name_map[force_name] = player.name
    return new_force
 end
 
@@ -141,7 +154,7 @@ local function mark_solo(player)
          player.force.share_chart = true
       end
       player.force = game.forces[force_name]
-      table.insert(FORCE_CHART_ALL_PENDING, player.force)
+      force_chart(player.force)
       player.print({"new_assignment", force_name})
    end
 end
@@ -255,12 +268,10 @@ local function create_left(player)
       caption={"settings_tale_spawn_reset"},
    }
    ON_BUTTON[settings_spawn_set] = function(event)
-      local player = game.players[event.player_index]
       player.force.set_spawn_position(player.position, player.surface)
       player.force.print({"settings_tale_spawn_set_msg"})
    end
    ON_BUTTON[settings_spawn_reset] = function(event)
-      local player = game.players[event.player_index]
       player.force.set_spawn_position({0, 0}, player.surface)
       player.force.print({"settings_tale_spawn_reset_msg "})
    end
@@ -375,16 +386,10 @@ script.on_event(defines.events.on_player_left_game, function(event)
 end)
 
 -- Handles charting for new forces on a delay.
-script.on_nth_tick(60, function ()
-   local final = table.remove(FORCE_CHART_ALL_FINAL)
-   if (final) then
-      final.chart_all()
-   end
-   local pending = table.remove(FORCE_CHART_ALL_PENDING)
-   if (pending) then
-      table.insert(FORCE_CHART_ALL_FINAL, pending)
-   end
+script.on_nth_tick(64, function ()
+   tick_force_chart()
 end)
+
 
 script.on_event(defines.events.on_gui_click, function(event)
    if (event.element) then
@@ -400,15 +405,23 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    end
 end)
 
+script.on_init(function()
+   initialize_global()
+end)
+
 script.on_configuration_changed(function(data)
+   initialize_global()
+
    local alliance = data.mod_changes["Alliance"]
    if (alliance) then
        if alliance.old_version == "0.1.4" then
          for _, force in pairs(game.forces) do
             local player = force.players[1]
             if player and force.name == player.name then
+               local old_force = player.force;
                local new_force = create_alliance_force(player)
-               game.merge_forces(player.force, new_force)
+               mark_solo(player)
+               game.merge_forces(old_force, new_force)
             end
          end
        end
