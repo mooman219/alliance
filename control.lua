@@ -8,7 +8,7 @@ local function initialize_global()
    if global[GLOBAL_FORCES] == nil then
       global[GLOBAL_FORCES] = {}
    end
-   
+
    if global[GLOBAL_FORCE_NAME_MAP] == nil then
       global[GLOBAL_FORCE_NAME_MAP] = {}
    end
@@ -198,6 +198,7 @@ local function create_left(player)
       name = SETTINGS_FRAME_NAME,
    }
 
+   -- Declaring independence
    if (not is_solo(player)) then
       local alliance_settings_solo = SETTINGS_SOLO .. player.name
       settings_frame.add{
@@ -215,16 +216,15 @@ local function create_left(player)
    local settings_table = settings_frame.add{
       type = "table",
       column_count = 2,
-      draw_horizontal_line_after_headers = true,
       name = ALLY_TABLE_NAME,
       style = ALLY_TABLE_STYLE,
    }
 
+   -- Vision broadcast
    settings_table.add{
       type = "label",
       caption={"settings_table_broadcast"}
    }
-
    local alliance_settings_broadcast = SETTINGS_BROADCAST .. player.name
    settings_table.add{
       type = "checkbox",
@@ -241,6 +241,30 @@ local function create_left(player)
       end
    end
 
+   -- Spawn setting and resetting
+   local settings_spawn_set = SETTINGS_SPAWN_SET .. player.name
+   local settings_spawn_reset = SETTINGS_SPAWN_RESET .. player.name
+   settings_table.add{
+      type = "button",
+      name = settings_spawn_set,
+      caption={"settings_tale_spawn_set"},
+   }
+   settings_table.add{
+      type = "button",
+      name = settings_spawn_reset,
+      caption={"settings_tale_spawn_reset"},
+   }
+   ON_BUTTON[settings_spawn_set] = function(event)
+      local player = game.players[event.player_index]
+      player.force.set_spawn_position(player.position, player.surface)
+      player.force.print({"settings_tale_spawn_set_msg"})
+   end
+   ON_BUTTON[settings_spawn_reset] = function(event)
+      local player = game.players[event.player_index]
+      player.force.set_spawn_position({0, 0}, player.surface)
+      player.force.print({"settings_tale_spawn_reset_msg "})
+   end
+
    local ally_frame = flow.add{
       type = "frame",
       caption = {"ally_frame_title"},
@@ -255,6 +279,7 @@ local function create_left(player)
       style = ALLY_TABLE_STYLE,
    }
 
+   -- Alliances
    table.add{
       type = "label",
       caption={"ally_table_force"}
@@ -271,7 +296,6 @@ local function create_left(player)
       type="label",
       caption = {"ally_table_ally"}
    }
-
    local count = 0
    for _, other in pairs(game.forces) do
       if (is_whitelisted_force_pair(player.force, other)) then
@@ -324,8 +348,7 @@ local function create_left(player)
 end
 
 ON_BUTTON[BUTTON_NAME] = function(event)
-   local player_index = event.player_index
-   local player = game.players[player_index]
+   local player = game.players[event.player_index]
     if (exists_left(player)) then
       destroy_left(player)
     else

@@ -25,6 +25,8 @@ SETTINGS_TABLE_NAME = "alliance_settings_table"
 SETTINGS_TABLE_STYLE = "alliance_ally_table_style"
 SETTINGS_BROADCAST = "alliance_settings_table_broadcast/"
 SETTINGS_SOLO = "alliance_settings_table_solo/"
+SETTINGS_SPAWN_SET = "alliance_settings_table_spawn_set/"
+SETTINGS_SPAWN_RESET = "alliance_settings_table_spawn_reset/"
 
 -- Alliance frame keys
 ALLY_FRAME_NAME = "alliance_ally_frame"
