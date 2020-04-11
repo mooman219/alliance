@@ -1,3 +1,10 @@
+-- Global keys
+GLOBAL_FORCES = "alliance_forces"
+-- global[GLOBAL_FORCES] = {force.name : LuaForce}
+GLOBAL_FORCE_NAME = "alliance_force/"
+GLOBAL_FORCE_NAME_MAP = "alliance_force_name_mappings"
+-- global[GLOBAL_FORCES] = {force.name : player.name}
+
 -- GUI event listeners
 ON_BUTTON = {}
 ON_CHECKBOX = {}
@@ -26,12 +33,6 @@ ALLY_TABLE_STYLE = "alliance_ally_table_style"
 ALLY_TABLE_ENEMY = "/alliance_ally_table_enemy/"
 ALLY_TABLE_NEUTRAL = "/alliance_ally_table_neutral/"
 ALLY_TABLE_ALLY = "/alliance_ally_table_ally/"
-
-FORCE_BLACKLIST = {
-    player = true,
-    neutral = true,
-    enemy = true,
-}
 
 -- Force chart_all() lists
 FORCE_CHART_ALL_PENDING = {}

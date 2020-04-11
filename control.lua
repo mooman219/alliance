@@ -1,11 +1,51 @@
 require("defines")
 
 -- ----------------------------------------------
+-- Global force functions
+-- ----------------------------------------------
+
+local function initialize_global()
+   if global[GLOBAL_FORCES] == nil then
+      global[GLOBAL_FORCES] = {}
+   end
+   
+   if global[GLOBAL_FORCE_NAME_MAP] == nil then
+      global[GLOBAL_FORCE_NAME_MAP] = {}
+   end
+end
+
+-- @param force: LuaForce
+-- @return bool
+local function is_alliance_force(force)
+   initialize_global()
+   return global[GLOBAL_FORCES][force.name] ~= nil
+end
+
+-- @param force: LuaForce
+-- @return string
+local function get_alliance_force_name(force)
+   initialize_global()
+   return global[GLOBAL_FORCE_NAME_MAP][force.name]
+end
+
+-- @param player: LuaPlayer
+-- @return LuaForce
+local function create_alliance_force(player)
+   initialize_global()
+   local force_name = GLOBAL_FORCE_NAME .. player.name
+   local new_force = game.create_force(force_name)
+   global[GLOBAL_FORCES][force_name] = new_force
+   global[GLOBAL_FORCE_NAME_MAP][force_name] = player.name
+   return new_force
+end
+
+-- ----------------------------------------------
 -- Alliance functions
 -- ----------------------------------------------
 
 -- @param player: LuaForce
 -- @param other: LuaForce
+-- @return bool
 local function is_enemy(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
@@ -14,6 +54,7 @@ end
 
 -- @param player: LuaForce
 -- @param other: LuaForce
+-- @return bool
 local function is_neutral(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
@@ -22,6 +63,7 @@ end
 
 -- @param player: LuaForce
 -- @param other: LuaForce
+-- @return bool
 local function is_ally(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
@@ -63,8 +105,8 @@ end
 
 -- @param player: LuaForce
 -- @param other: LuaForce
-local function is_blacklisted(player, other)
-   return player == other or FORCE_BLACKLIST[other.name]
+local function is_whitelisted_force_pair(player, other)
+   return player ~= other and is_alliance_force(other)
 end
 
 -- ----------------------------------------------
@@ -72,17 +114,17 @@ end
 -- ----------------------------------------------
 
 -- @param player: LuaPlayer
+-- @return bool
 local function is_solo(player)
-   local force_name = player.name
-   return player.force.name == force_name
+   return is_alliance_force(player.force)
 end
 
 -- @param player: LuaPlayer
 local function mark_solo(player)
-   local force_name = player.name
    if (not is_solo(player)) then
+      local force_name = GLOBAL_FORCE_NAME .. player.name
       if (game.forces[force_name] == nil) then
-         local new_force = game.create_force(force_name)
+         local new_force = create_alliance_force(player)
          -- Copy over the research from the old force to the new one
          for key, tech in pairs(player.force.technologies) do
             new_force.technologies[key].researched = tech.researched
@@ -109,11 +151,13 @@ end
 -- ----------------------------------------------
 
 -- @param player: LuaPlayer
+-- @return bool
 local function exists_top(player)
    return player.gui.top[TOP_FLOW] ~= nil
 end
 
 -- @param player: LuaPlayer
+-- @return bool
 local function exists_left(player)
    return player.gui.left[LEFT_FLOW] ~= nil
 end
@@ -230,11 +274,11 @@ local function create_left(player)
 
    local count = 0
    for _, other in pairs(game.forces) do
-      if (not is_blacklisted(player.force, other)) then
+      if (is_whitelisted_force_pair(player.force, other)) then
          count = count + 1
          table.add{
             type = "label",
-            caption = other.name
+            caption = get_alliance_force_name(other)
          }
          local alliance_ally_table_enemy = player.name .. ALLY_TABLE_ENEMY .. other.name
          local alliance_ally_table_neutral = player.name .. ALLY_TABLE_NEUTRAL .. other.name
@@ -330,5 +374,20 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    if (event.element) then
       local action = ON_CHECKBOX[event.element.name]
       if (action) then action(event) end
+   end
+end)
+
+script.on_configuration_changed(function(data)
+   local alliance = data.mod_changes["Alliance"]
+   if (alliance) then
+       if alliance.old_version == "0.1.4" then
+         for _, force in pairs(game.forces) do
+            local player = force.players[1]
+            if player and force.name == player.name then
+               local new_force = create_alliance_force(player)
+               game.merge_forces(player.force, new_force)
+            end
+         end
+       end
    end
 end)
