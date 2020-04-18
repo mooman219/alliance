@@ -3,8 +3,8 @@ local default_style = data.raw["gui-style"].default
 default_style[TOP_FLOW_STYLE] = {
 	type = "horizontal_flow_style",
 	parent = "horizontal_flow",
-    top_padding = 5,
-    left_padding = 5,
+    top_padding = 0,
+    left_padding = 0,
 }
 
 default_style[LEFT_FLOW_STYLE] = {

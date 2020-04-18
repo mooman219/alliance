@@ -1,3 +1,4 @@
+require("mod-gui")
 require("defines")
 
 -- ----------------------------------------------
@@ -11,40 +12,28 @@ local function initialize_global()
    global.force_name_map = global.force_name_map or {}
 
    -- global.chart_all_pending = [force.name]
-   global.chart_all_pending = global.forces or {}
+   global.chart_all_pending = {}
    -- global.chart_all_final = [force.name]
-   global.chart_all_final = global.forces or {}
+   global.chart_all_final = {}
 
    -- global.button_relationship_target = {button.name : force.name}
    global.ally_table_target = global.ally_table_target or {}
 end
 
-local function tick_force_chart()
-   local final = table.remove(global.chart_all_final)
-   if (final and game.forces[final]) then game.forces[final].chart_all() end
-   local pending = table.remove(global.chart_all_pending)
-   if (pending) then table.insert(global.chart_all_final, pending) end
-end
-
--- @param force: LuaForce
-local function force_chart(force)
-   table.insert(global.chart_all_pending, force.name)
-end
-
--- @param force: LuaForce
--- @return bool
+---@param force any | "LuaForce"
+---@return boolean
 local function is_alliance_force(force)
    return global.forces[force.name] ~= nil
 end
 
--- @param force: LuaForce
--- @return string
+---@param force any | "LuaForce"
+---@return string
 local function get_alliance_force_name(force)
    return global.force_name_map[force.name]
 end
 
--- @param player: LuaPlayer
--- @return LuaForce
+---@param player any | "LuaPlayer"
+---@return any | "LuaForce"
 local function create_alliance_force(player)
    local force_name = GLOBAL_FORCE_NAME .. player.name
    local new_force = game.create_force(force_name)
@@ -60,59 +49,59 @@ end
 -- Alliance functions
 -- ----------------------------------------------
 
--- @param player: LuaForce
--- @param other: LuaForce
--- @return bool
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
+---@return boolean
 local function is_enemy(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
    return not ceasefire and not friend
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
--- @return bool
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
+---@return boolean
 local function is_neutral(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
    return ceasefire and not friend
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
--- @return bool
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
+---@return boolean
 local function is_ally(player, other)
    local ceasefire = player.get_cease_fire(other)
    local friend = player.get_friend(other)
    return friend
 end
 
--- @param player: LuaPlayer
--- @param other: LuaForce
+---@param player any | "LuaPlayer"
+---@param other any | "LuaForce"
 local function set_enemy(player, other)
    player.set_cease_fire(other, false)
    player.set_friend(other, false)
    player.print({"set_enemy", game.tick, get_alliance_force_name(other)})
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
 local function set_neutral(player, other)
    player.set_cease_fire(other, true)
    player.set_friend(other, false)
    player.print({"set_neutral", game.tick, get_alliance_force_name(other)})
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
 local function set_ally(player, other)
    player.set_cease_fire(other, true)
    player.set_friend(other, true)
    player.print({"set_ally", game.tick, get_alliance_force_name(other)})
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
 local function set_mutual_ally(player, other)
    player.set_cease_fire(other, true)
    player.set_friend(other, true)
@@ -120,8 +109,8 @@ local function set_mutual_ally(player, other)
    other.set_friend(player, true)
 end
 
--- @param player: LuaForce
--- @param other: LuaForce
+---@param player any | "LuaForce"
+---@param other any | "LuaForce"
 local function is_whitelisted_force_pair(player, other)
    return player ~= other and is_alliance_force(other)
 end
@@ -130,13 +119,13 @@ end
 -- Force functions
 -- ----------------------------------------------
 
--- @param player: LuaPlayer
--- @return bool
+---@param player any | "LuaPlayer"
+---@return boolean
 local function is_solo(player)
    return is_alliance_force(player.force)
 end
 
--- @param force: LuaForce
+---@param force any | "LuaForce"
 local function apply_solo_bonus(force)
    force.character_build_distance_bonus = force.character_build_distance_bonus + 30
    force.character_reach_distance_bonus = force.character_reach_distance_bonus + 30
@@ -145,8 +134,8 @@ local function apply_solo_bonus(force)
    force.manual_mining_speed_modifier = force.manual_mining_speed_modifier + 1
 end
 
--- @param player: LuaPlayer
--- @return LuaForce
+---@param player any | "LuaPlayer"
+---@return any | "LuaForce"
 local function mark_solo(player)
    if (not is_solo(player)) then
       local force_name = GLOBAL_FORCE_NAME .. player.name
@@ -164,7 +153,6 @@ local function mark_solo(player)
          player.force.share_chart = true
       end
       player.force = game.forces[force_name]
-      force_chart(player.force)
       player.print({"new_assignment", force_name})
    end
 end
@@ -173,40 +161,40 @@ end
 -- GUI functions
 -- ----------------------------------------------
 
--- @param player: LuaPlayer
--- @return bool
+---@param player any | "LuaPlayer"
+---@return boolean
 local function exists_top(player)
    return player.gui.top[TOP_FLOW] ~= nil
 end
 
--- @param player: LuaPlayer
--- @return bool
+---@param player any | "LuaPlayer"
+---@return boolean
 local function exists_left(player)
    return player.gui.left[LEFT_FLOW] ~= nil
 end
 
--- @param player: LuaPlayer
+---@param player any | "LuaPlayer"
 local function destroy_left(player)
    player.gui.left[LEFT_FLOW].destroy()
 end
 
--- @param player: LuaPlayer
+---@param player any | "LuaPlayer"
 local function create_top(player)
-   local flow = player.gui.top.add{
+   player.gui.top.add{
       type = "flow",
       name = TOP_FLOW,
       style = TOP_FLOW_STYLE,
    }
-
-   flow.add{
-      type = "button",
-      caption = "<3",
-      name = BUTTON_NAME,
-      style = BUTTON_STYLE,
+   mod_gui.get_button_flow(player).add
+   {
+     type = "button",
+     caption = "<3",
+     name = BUTTON_NAME,
+     style = mod_gui.button_style
    }
 end
 
--- @param player: LuaPlayer
+---@param player any | "LuaPlayer"
 local function create_left(player)
    local flow = player.gui.left.add{
       type = "flow",
@@ -418,11 +406,6 @@ end)
 script.on_event(defines.events.on_player_left_game, function(event)
    local player = game.players[event.player_index]
    if exists_left(player) then destroy_left(player) end
-end)
-
--- Handles charting for new forces on a delay.
-script.on_nth_tick(64, function ()
-   tick_force_chart()
 end)
 
 
