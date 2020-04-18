@@ -157,6 +157,13 @@ local function mark_solo(player)
    end
 end
 
+---@param force any | "LuaForce"
+---@return boolean
+local function is_offline_force(force)
+   -- The enemy force should always be considered online.
+   return force.name ~= "enemy" and force.connected_players[1] == nil
+end
+
 -- ----------------------------------------------
 -- GUI functions
 -- ----------------------------------------------
@@ -408,6 +415,16 @@ script.on_event(defines.events.on_player_left_game, function(event)
    if exists_left(player) then destroy_left(player) end
 end)
 
+-- Damage reduction to structures of offline forces.
+script.on_event(defines.events.on_entity_damaged, function(event)
+   local force = event.entity.force
+   if (is_offline_force(force) and is_alliance_force(force)) then
+      local modified_damage = event.final_damage_amount * 0.1
+      if (modified_damage < event.entity.health) then
+         event.entity.health = event.entity.health + event.final_damage_amount * 0.9
+      end
+   end
+end)
 
 script.on_event(defines.events.on_gui_click, function(event)
    if (event.element) then
