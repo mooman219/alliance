@@ -2,6 +2,17 @@ require("mod-gui")
 require("defines")
 
 -- ----------------------------------------------
+-- Parameter functions
+-- ----------------------------------------------
+
+local function fetch_parameters()
+   PARAM_OFFLINE_DAMAGE_REDUCTION = settings.global[PARAM_OFFLINE_DAMAGE_REDUCTION_NAME].value
+   PARAM_REACH_BONUS = settings.global[PARAM_REACH_BONUS_NAME].value
+   PARAM_INVENTORY_BONUS = settings.global[PARAM_INVENTORY_BONUS_NAME].value
+   PARAM_MINING_BONUS = settings.global[PARAM_MINING_BONUS_NAME].value
+end
+
+-- ----------------------------------------------
 -- Global force functions
 -- ----------------------------------------------
 
@@ -127,11 +138,11 @@ end
 
 ---@param force any | "LuaForce"
 local function apply_solo_bonus(force)
-   force.character_build_distance_bonus = force.character_build_distance_bonus + 30
-   force.character_reach_distance_bonus = force.character_reach_distance_bonus + 30
-   force.character_resource_reach_distance_bonus = force.character_resource_reach_distance_bonus + 30
-   force.character_inventory_slots_bonus = force.character_inventory_slots_bonus + 30
-   force.manual_mining_speed_modifier = force.manual_mining_speed_modifier + 1
+   force.character_build_distance_bonus = force.character_build_distance_bonus + PARAM_REACH_BONUS
+   force.character_reach_distance_bonus = force.character_reach_distance_bonus + PARAM_REACH_BONUS
+   force.character_resource_reach_distance_bonus = force.character_resource_reach_distance_bonus + PARAM_REACH_BONUS
+   force.character_inventory_slots_bonus = force.character_inventory_slots_bonus + PARAM_INVENTORY_BONUS
+   force.manual_mining_speed_modifier = force.manual_mining_speed_modifier + PARAM_MINING_BONUS
 end
 
 ---@param player any | "LuaPlayer"
@@ -419,9 +430,9 @@ end)
 script.on_event(defines.events.on_entity_damaged, function(event)
    local force = event.entity.force
    if (is_offline_force(force) and is_alliance_force(force)) then
-      local modified_damage = event.final_damage_amount * 0.1
+      local modified_damage = event.final_damage_amount * (1.0 - PARAM_OFFLINE_DAMAGE_REDUCTION)
       if (modified_damage < event.entity.health) then
-         event.entity.health = event.entity.health + event.final_damage_amount * 0.9
+         event.entity.health = event.entity.health + event.final_damage_amount * PARAM_OFFLINE_DAMAGE_REDUCTION
       end
    end
 end)
@@ -446,12 +457,18 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
    end
 end)
 
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+   fetch_parameters()
+end)
+
 script.on_init(function()
    initialize_global()
+   fetch_parameters()
 end)
 
 script.on_configuration_changed(function(data)
    initialize_global()
+   fetch_parameters()
 
    local alliance = data.mod_changes["Alliance"]
    if (alliance) then

@@ -32,3 +32,13 @@ ALLY_TABLE_STYLE = "alliance_ally_table_style"
 ALLY_TABLE_ENEMY = "alliance_ally_table_enemy/"
 ALLY_TABLE_NEUTRAL = "alliance_ally_table_neutral/"
 ALLY_TABLE_ALLY = "alliance_ally_table_ally/"
+
+-- PARAMETERS
+PARAM_OFFLINE_DAMAGE_REDUCTION = 0.98
+PARAM_OFFLINE_DAMAGE_REDUCTION_NAME = "offline-player-damage-reduction"
+PARAM_REACH_BONUS = 30
+PARAM_REACH_BONUS_NAME = "independence-reach-bonus"
+PARAM_INVENTORY_BONUS = 30
+PARAM_INVENTORY_BONUS_NAME = "independence-inventory-bonus"
+PARAM_MINING_BONUS = 1.0
+PARAM_MINING_BONUS_NAME = "independence-mining-bonus"
