@@ -466,6 +466,10 @@ script.on_init(function()
    fetch_parameters()
 end)
 
+script.on_load(function()
+   fetch_parameters()
+end)
+
 script.on_configuration_changed(function(data)
    initialize_global()
    fetch_parameters()
